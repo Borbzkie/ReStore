@@ -1,7 +1,6 @@
 using API.Data;
 using Microsoft.EntityFrameworkCore;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -13,6 +12,18 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<StoreContext>(opt =>  
 {
     opt.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+// Add services to the container
+builder.Services.AddCors(options => 
+{
+    options.AddPolicy("DefaultPolicy",
+        policybuilder =>
+        {
+           policybuilder.WithOrigins("http://localhost:3000","http://localhost:3000")
+                                .AllowAnyHeader()
+                                .AllowAnyMethod()
+                                .AllowCredentials();
+        });
 });
 
 var app = builder.Build();
@@ -29,6 +40,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();  
 }
 
+// Order is important in this section
+// Addd middleware
+
+/**
+app.UseCors(opt => {
+    opt.AllowAnyHeader().AllowAnyMethod().WithOrigins("http://localhost:3000/");
+}); **/
+
+app.UseCors("DefaultPolicy");
+
+app.UseAuthorization(); 
 app.MapControllers();
 // To hold off the db context , we create a scope 
 var scope = app.Services.CreateScope();
